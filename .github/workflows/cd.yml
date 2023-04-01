@@ -1,4 +1,4 @@
-name: Continuous Integration/Deployment
+name: Continuous Deployment
 
 on:
   push:
@@ -6,73 +6,8 @@ on:
       - main
 
 jobs:
-  lint-test:
-    name: Lint and Test Python code
-    runs-on: ubuntu-20.04
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
-
-      - name: Set up Python 3.8.2
-        uses: actions/setup-python@v2
-        with:
-          python-version: 3.8.2
-
-      - name: Install dependencies
-        run: |
-          make setup
-
-      - name: Lint our code
-        run: |
-          make lints.format.check
-
-      - name: Test our code
-        run: |
-          make test.coverage
-
-  build-push-docker-images:
-    needs: lint-test
-    name: Build and Push Image to ECR
-    runs-on: ubuntu-20.04
-    permissions:
-      contents: read
-      id-token: write
-      packages: read
-      pull-requests: write
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1
-
-      - name: Install docker
-        id: install-docker
-        run: |
-          curl -fsSL https://get.docker.com -o get-docker.sh && chmod +x get-docker.sh && ./get-docker.sh
-
-      - name: Login to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v1
-
-      - name: Build, tag, and push lambda_func.py to Amazon ECR
-        env:
-          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          REPOSITORY: davinci_ecr
-          DOCKERFILE: Dockerfile.lambda_func
-          IMAGE_TAG: lambda_func
-        run: |
-          docker build --no-cache -f $DOCKERFILE -t $REGISTRY/$REPOSITORY:$IMAGE_TAG .
-          docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
-
-  deploy-lambda-funcs:
-    needs: build-push-docker-images
-    name: Deploy Lambda Function w/ Terraform
+  deploy-infra:
+    name: Deploy Infrastructure w/ Terraform
     runs-on: ubuntu-20.04
     permissions:
       contents: read
@@ -105,54 +40,17 @@ jobs:
         id: init
         env:
           TF_TOKEN: ${{ secrets.TF_API_TOKEN }}
-        run: |
-          terraform init
+        run: terraform init
 
       - name: Terraform validate
         id: validate
-        env:
-          TF_WORKSPACE: ${{ env.REPO_NAME }}
-          TF_TOKEN: ${{ secrets.TF_API_TOKEN }}
         run: terraform validate -no-color
 
       - name: Terraform Plan
         id: plan
         if: github.event_name == 'pull_request'
-        env:
-          TF_WORKSPACE: ${{ env.REPO_NAME }}
-          TF_TOKEN: ${{ secrets.TF_API_TOKEN }}
         run: terraform plan -no-color -input=false
         continue-on-error: true
-
-      - name: Update Pull Request
-        uses: actions/github-script@v6
-        if: github.event_name == 'pull_request'
-        env:
-          PLAN: "terraform\n${{ steps.plan.outputs.stdout }}"
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const output = `#### Terraform Format and Style 🖌\`${{ steps.fmt.outcome }}\`
-            #### Terraform Initialization ⚙️\`${{ steps.init.outcome }}\`
-            #### Terraform Plan 📖\`${{ steps.plan.outcome }}\`
-            #### Terraform Validation 🤖\`${{ steps.validate.outcome }}\`
-
-            <details><summary>Show Plan</summary>
-
-            \`\`\`\n
-            ${process.env.PLAN}
-            \`\`\`
-
-            </details>
-
-            *Pushed by: @${{ github.actor }}, Action: \`${{ github.event_name }}\`*`;
-
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: output
-            })
 
       - name: Terraform Plan Status
         if: steps.plan.outcome == 'failure'
@@ -160,7 +58,4 @@ jobs:
 
       - name: Terraform Apply
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        env:
-          TF_WORKSPACE: ${{ env.REPO_NAME }}
-          TF_TOKEN: ${{ secrets.TFE_API_TOKEN }}
         run: terraform apply -auto-approve -input=false

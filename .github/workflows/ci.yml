@@ -1,8 +1,10 @@
-name: Continuous Integration/Deployment
+name: Continuous Integration
 
 on:
   pull_request:
-    branches: [main]
+    types: [opened, edited, synchronize, ready_for_review]
+    branches:
+      - main
 
 jobs:
   lint-test:
@@ -52,26 +54,35 @@ jobs:
 
       - name: Install docker
         id: install-docker
-        run: |
-          curl -fsSL https://get.docker.com -o get-docker.sh && chmod +x get-docker.sh && ./get-docker.sh
+        run: curl -fsSL https://get.docker.com -o get-docker.sh && chmod +x get-docker.sh && ./get-docker.sh
 
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
 
-      - name: Build, tag, and push lambda_func.py to Amazon ECR
+      - name: Build, tag, and push handler.py to Amazon ECR
         env:
           REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           REPOSITORY: davinci_ecr
-          DOCKERFILE: Dockerfile.lambda_func
-          IMAGE_TAG: lambda_func
+          DOCKERFILE: Dockerfile.handler
+          IMAGE_TAG: lambda_handler
         run: |
           docker build --no-cache -f $DOCKERFILE -t $REGISTRY/$REPOSITORY:$IMAGE_TAG .
           docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
 
-  deploy-lambda-funcs:
+      - name: Build, tag, and push authorizer.py to Amazon ECR
+        env:
+          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          REPOSITORY: davinci_ecr
+          DOCKERFILE: Dockerfile.authorizer
+          IMAGE_TAG: lambda_authorizer
+        run: |
+          docker build --no-cache -f $DOCKERFILE -t $REGISTRY/$REPOSITORY:$IMAGE_TAG .
+          docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
+
+  plan-infra:
     needs: build-push-docker-images
-    name: Deploy Lambda Function w/ Terraform
+    name: Plan Infrastructure w/ Terraform
     runs-on: ubuntu-20.04
     permissions:
       contents: read
@@ -104,22 +115,15 @@ jobs:
         id: init
         env:
           TF_TOKEN: ${{ secrets.TF_API_TOKEN }}
-        run: |
-          terraform init
+        run: terraform init
 
       - name: Terraform validate
         id: validate
-        env:
-          TF_WORKSPACE: ${{ env.REPO_NAME }}
-          TF_TOKEN: ${{ secrets.TF_API_TOKEN }}
         run: terraform validate -no-color
 
       - name: Terraform Plan
         id: plan
         if: github.event_name == 'pull_request'
-        env:
-          TF_WORKSPACE: ${{ env.REPO_NAME }}
-          TF_TOKEN: ${{ secrets.TF_API_TOKEN }}
         run: terraform plan -no-color -input=false
         continue-on-error: true
 
@@ -156,10 +160,3 @@ jobs:
       - name: Terraform Plan Status
         if: steps.plan.outcome == 'failure'
         run: exit 1
-
-      - name: Terraform Apply
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        env:
-          TF_WORKSPACE: ${{ env.REPO_NAME }}
-          TF_TOKEN: ${{ secrets.TFE_API_TOKEN }}
-        run: terraform apply -auto-approve -input=false
