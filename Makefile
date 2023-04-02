@@ -5,7 +5,7 @@ SOURCE_OBJECTS=src tests
 
 setup:
 	pip3 install poetry==1.3.1
-	poetry install
+	poetry install --no-root
 
 format.black:
 	poetry run black ${SOURCE_OBJECTS}
