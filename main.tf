@@ -4,7 +4,7 @@ terraform {
     hostname     = "app.terraform.io"
     organization = "davinci"
     workspaces {
-      name = "lambda-tf"
+      name = "lambda-authorizer-tf"
     }
   }
   required_providers {
