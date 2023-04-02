@@ -1,6 +1,7 @@
 import json
 from typing import Any, Dict
 
+
 def lambda_handler(event, context) -> Dict[str, Any]:
     print("Event: {}".format(event))
     print("Context: {}".format(context))
