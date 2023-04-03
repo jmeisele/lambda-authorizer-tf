@@ -155,8 +155,6 @@ resource "aws_api_gateway_resource" "proxy_pred" {
   rest_api_id = aws_api_gateway_rest_api.lambda_api.id
   parent_id   = aws_api_gateway_rest_api.lambda_api.root_resource_id
   path_part   = "customer"
-  #   request_paremeters = {
-  #   }
 }
 
 resource "aws_api_gateway_method" "method_proxy" {
@@ -178,24 +176,24 @@ resource "aws_api_gateway_integration" "api_lambda" {
 }
 
 # # IAM for API
-# resource "aws_api_gateway_rest_api_policy" "api_allow_invoke" {
-#   rest_api_id = aws_api_gateway_rest_api.lambda_api.id
+resource "aws_api_gateway_rest_api_policy" "api_allow_invoke" {
+  rest_api_id = aws_api_gateway_rest_api.lambda_api.id
 
-#   policy = <<EOF
-# {
-#   "Version": "2012-10-17",
-#   "Statement": [
-#     {
-#       "Effect": "Allow",
-#       "Principal": "*",
-#       "Action": [
-#         "execute-api:Invoke"
-#       ],
-#       "Resource": [
-#         "arn:aws:execute-api:${var.region}:${var.account_id}:${aws_api_gateway_rest_api.lambda_api.id}/*/${aws_api_gateway_method.method_proxy.http_method}${aws_api_gateway_resource.proxy_pred.path}"
-#       ]
-#     }
-#   ]
-# }
-# EOF
-# }
+  policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": "*",
+      "Action": [
+        "execute-api:Invoke"
+      ],
+      "Resource": [
+        "arn:aws:execute-api:${var.region}:${var.account_id}:${aws_api_gateway_rest_api.lambda_api.id}/*/${aws_api_gateway_method.method_proxy.http_method}${aws_api_gateway_resource.proxy_pred.path}"
+      ]
+    }
+  ]
+}
+EOF
+}
