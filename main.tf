@@ -37,6 +37,10 @@ data "aws_ecr_image" "handler_image" {
   image_tag       = "lambda_handler"
 }
 
+  ###############
+  #   Lambdas   #
+  ###############
+
 resource "aws_iam_role" "iam_for_lambda" {
   name               = "iam_for_lambda"
   assume_role_policy = <<EOF
@@ -125,6 +129,10 @@ resource "aws_lambda_function" "handler" {
   image_uri     = "${data.aws_ecr_repository.repository.repository_url}@${data.aws_ecr_image.handler_image.image_digest}"
   package_type  = "Image"
 }
+
+  ###############
+  # API Gateway #
+  ###############
 
 resource "aws_api_gateway_rest_api" "lambda_api" {
   name = "mock_authorizer_api"
