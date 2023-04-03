@@ -15,7 +15,7 @@ def test_lambda_handler() -> None:
                 {
                     "Action": "execute-api:Invoke",
                     "Resource": [
-                        "arn:aws:execute-api:us-east-1:YOURACCOUNTNUMBER:2ogoj2ul12/test/GET/customers"
+                        "arn:aws:execute-api:us-east-1:288195736164:1xzg485zja/*/*"
                     ],
                     "Effect": "Allow",
                 }
