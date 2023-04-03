@@ -162,7 +162,7 @@ resource "aws_api_gateway_method" "method_proxy" {
   resource_id   = aws_api_gateway_resource.proxy_pred.id
   http_method   = "GET"
   authorization = "CUSTOM"
-  authorizer_id = aws_api_gateway_authorizer.authorizer.id
+  authorizer_id = aws_api_gateway_authorizer.demo.id
 }
 
 resource "aws_api_gateway_integration" "api_lambda" {
