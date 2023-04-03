@@ -176,7 +176,7 @@ resource "aws_api_gateway_integration" "api_lambda" {
   timeout_milliseconds    = 29000
 }
 
-# # IAM for API
+# IAM for API
 resource "aws_api_gateway_rest_api_policy" "api_allow_invoke" {
   rest_api_id = aws_api_gateway_rest_api.lambda_api.id
 
