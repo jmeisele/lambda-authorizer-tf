@@ -112,7 +112,7 @@ resource "aws_apigatewayv2_api" "lambda_api" {
 
 resource "aws_apigatewayv2_authorizer" "demo" {
   name             = "demo_authorizer"
-  api_id           = aws_api_gateway_rest_api.lambda_api.id
+  api_id           = aws_apigatewayv2_api.lambda_api.id
   authorizer_type  = "REQUEST"
   authorizer_uri   = aws_lambda_function.authorizer.invoke_arn
   identity_sources = ["$request.header.Authorization"]
