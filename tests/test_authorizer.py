@@ -3,7 +3,8 @@ from src.authorizer import lambda_handler
 
 def test_lambda_handler() -> None:
     event = {}
-    event["authorizationToken"] = "abc123"
+    # event["authorizationToken"] = "abc123"
+    event["headers"]["Authorization"] = "abc123"
     result = lambda_handler(event, context=None)
     expected = {
         "principalId": "abc123",
