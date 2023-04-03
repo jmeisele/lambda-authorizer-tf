@@ -82,8 +82,8 @@ data "aws_iam_policy_document" "invocation_assume_role" {
     effect = "Allow"
 
     principals {
-      type       = "Service"
-      identifier = ["apigateway.amazonaws.com"]
+      type        = "Service"
+      identifiers = ["apigateway.amazonaws.com"]
     }
 
     actions = ["sts:AssumeRole"]
