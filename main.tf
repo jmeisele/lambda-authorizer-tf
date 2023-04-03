@@ -151,31 +151,31 @@ resource "aws_iam_role_policy" "invocation_policy" {
   policy = data.aws_iam_policy_document.invocation_policy.json
 }
 
-# resource "aws_api_gateway_resource" "proxy_pred" {
-#   rest_api_id = aws_api_gateway_rest_api.lambda_api.id
-#   parent_id   = aws_api_gateway_rest_api.lambda_api.root_resource_id
-#   path_part   = "customer"
-#   #   request_paremeters = {
-#   #   }
-# }
+resource "aws_api_gateway_resource" "proxy_pred" {
+  rest_api_id = aws_api_gateway_rest_api.lambda_api.id
+  parent_id   = aws_api_gateway_rest_api.lambda_api.root_resource_id
+  path_part   = "customer"
+  #   request_paremeters = {
+  #   }
+}
 
-# resource "aws_api_gateway_method" "method_proxy" {
-#   rest_api_id   = aws_api_gateway_rest_api.lambda_api.id
-#   resource_id   = aws_api_gateway_resource.proxy_pred.id
-#   http_method   = "GET"
-#   authorization = "NONE"
-# }
+resource "aws_api_gateway_method" "method_proxy" {
+  rest_api_id   = aws_api_gateway_rest_api.lambda_api.id
+  resource_id   = aws_api_gateway_resource.proxy_pred.id
+  http_method   = "GET"
+  authorization = "NONE"
+}
 
-# resource "aws_api_gateway_integration" "api_lambda" {
-#   rest_api_id = aws_api_gateway_rest_api.lambda_api.id
-#   resource_id = aws_api_gateway_method.method_proxy.resource_id
-#   http_method = aws_api_gateway_method.method_proxy.http_method
+resource "aws_api_gateway_integration" "api_lambda" {
+  rest_api_id = aws_api_gateway_rest_api.lambda_api.id
+  resource_id = aws_api_gateway_method.method_proxy.resource_id
+  http_method = aws_api_gateway_method.method_proxy.http_method
 
-#   integration_http_method = "POST"
-#   type                    = "AWS_PROXY"
-#   uri                     = var.lambda_func_invoke_arn
-#   timeout_milliseconds    = 29000
-# }
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = aws_lambda_function.handler.invoke_arn
+  timeout_milliseconds    = 29000
+}
 
 # # IAM for API
 # resource "aws_api_gateway_rest_api_policy" "api_allow_invoke" {
