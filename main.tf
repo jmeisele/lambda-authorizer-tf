@@ -77,7 +77,7 @@ data "aws_iam_policy_document" "lambda" {
   }
 }
 
-data "aws_iam_role_policy_document" "invocation_assume_role" {
+data "aws_iam_policy_document" "invocation_assume_role" {
   statement {
     effect = "Allow"
 
