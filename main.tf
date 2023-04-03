@@ -77,6 +77,27 @@ data "aws_iam_policy_document" "lambda" {
   }
 }
 
+data "aws_iam_role_policy_document" "invocation_assume_role" {
+  statement {
+    effect = "Allow"
+
+    principals {
+      type       = "Service"
+      identifier = ["apigateway.amazonaws.com"]
+    }
+
+    actions = ["sts:AssumeRole"]
+  }
+}
+
+data "aws_iam_policy_document" "invocation_policy" {
+  statement {
+    effect    = "Allow"
+    actions   = ["lambda:InvokeFunction"]
+    resources = [aws_lambda_function.authorizer.arn]
+  }
+}
+
 # IAM policy for logging from a lambda and getting our image from ECR
 resource "aws_iam_policy" "iam_policy_for_lambda" {
   name        = "aws_iam_policy_for_terraform_aws_lambda_role"
@@ -105,18 +126,28 @@ resource "aws_lambda_function" "handler" {
   package_type  = "Image"
 }
 
-resource "aws_apigatewayv2_api" "lambda_api" {
-  name          = "mock_authorizer_api"
-  protocol_type = "HTTP"
+resource "aws_api_gateway_rest_api" "lambda_api" {
+  name = "mock_authorizer_api"
 }
 
-resource "aws_apigatewayv2_authorizer" "demo" {
-  name                              = "demo_authorizer"
-  api_id                            = aws_apigatewayv2_api.lambda_api.id
-  authorizer_type                   = "REQUEST"
-  authorizer_uri                    = aws_lambda_function.authorizer.invoke_arn
-  identity_sources                  = ["$request.header.Authorization"]
-  authorizer_payload_format_version = "2.0"
+resource "aws_api_gateway_authorizer" "demo" {
+  name                   = "demo_authorizer"
+  rest_api_id            = aws_api_gateway_rest_api.lambda_api.id
+  authorizer_type        = "REQUEST"
+  authorizer_uri         = aws_lambda_function.authorizer.invoke_arn
+  authorizer_credentials = aws_iam_role.invocation_role.arn
+}
+
+resource "aws_iam_role" "invocation_role" {
+  name               = "api_gateway_auth_invocation"
+  path               = "/"
+  assume_role_policy = data.aws_iam_role_policy_document.assume_role.json
+}
+
+resource "aws_iam_role_policy" "invocation_policy" {
+  name   = "default"
+  role   = aws_iam_role.invocation_role.id
+  policy = data.aws_iam_policy_document.invocation_policy.json
 }
 
 # resource "aws_api_gateway_resource" "proxy_pred" {
