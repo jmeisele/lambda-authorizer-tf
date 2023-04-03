@@ -105,8 +105,9 @@ resource "aws_lambda_function" "handler" {
   package_type  = "Image"
 }
 
-resource "aws_api_gateway_rest_api" "lambda_api" {
-  name = "mock_authorizer_api"
+resource "aws_apigatewayv2_api" "lambda_api" {
+  name          = "mock_authorizer_api"
+  protocol_type = "HTTP"
 }
 
 resource "aws_apigatewayv2_authorizer" "demo" {
