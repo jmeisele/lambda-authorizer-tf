@@ -1,10 +1,11 @@
 def lambda_handler(event, context):
     # 1 - Log the event
     print("*********** The event is: ***************")
-    print(event)
+    print(f"event: {event}")
 
     # 2 - See if the person's token is valid
-    if event["authorizationToken"] == "abc123":
+    # if event["authorizationToken"] == "abc123":
+    if event["headers"]["Authorization"] == "abc123":
         auth = "Allow"
     else:
         auth = "Deny"
